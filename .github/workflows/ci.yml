@@ -98,9 +98,6 @@ jobs:
           unzip ${{ steps.var.outputs.filename }}.zip payload.bin
           rm -rf ${{ steps.var.outputs.filename }}.zip
           python3 update-payload-extractor/extract.py payload.bin --output_dir ./output/
-          cd output
-          ls -al
-          cd ..
 
       - name: Patching Fstab
         run: |
@@ -124,13 +121,26 @@ jobs:
           ./mkboot boot.img boot
           rm boot.img
           cd boot
-          sed -i '/vbmeta/d' img_info
+          sed -i 's/androidboot.vbmeta.avb_version=...//g' img_info
+          cat img_info
           cp img_info ../../output/
           ls -al
           cd ..
           ./mkboot boot boot.img
           ls -al
           mv *.img ../output/
+          cd ..
+
+      - name: MakeMeSAR
+        run: |
+          mkdir tmp
+          mv output/boot.img tmp/
+          cd tmp
+          ../magiskboot unpack -h boot.img
+          cp -f ../ramdisk-sar.cpio ramdisk.cpio
+          ../magiskboot repack boot.img
+          ls -al
+          mv new-boot.img ../output/boot.img
           cd ..
 
       - name: Mkdtimg
@@ -142,6 +152,12 @@ jobs:
           python dtbo2dtsi.py
           rm dtbo.img
           ls -al
+          line="$(grep -n "vbmeta" dtsi.0)"
+          linea="$(echo $line | cut -d ":" -f 1)"
+          lineb="`expr $linea + 24`""p"
+          echo $linea
+          echo $lineb
+          sed -n "$linea,$lineb" dtsi.*
           sed -i '/parts/{n;d;}' dtsi.*
           sed -i '/parts/{n;d;}' dtsi.*
           sed -i '/vbmeta/d' dtsi.*
@@ -149,6 +165,10 @@ jobs:
           sed -i '/parts/d' dtsi.*
           sed -i 's/,slotselect//g' dtsi.*
           sed -i 's/,avb//g' dtsi.*
+          sed -i '/,fstab/G' dtsi.*
+          sed -i '/,fstab/r flags.txt' dtsi.*
+          sed -i '/,fstab/G' dtsi.*
+          sed -n "$linea,$lineb" dtsi.*
           cp dtsi.* ../output/
           python dtsi2dtbo.py
           cp dtb_tmp.* ../output/
@@ -162,14 +182,15 @@ jobs:
           mv output/boot.img template/
           mv output/system.img template/
           mv output/vendor.img template/
-          ls -al
+          mv output/dtbo.img template/
           echo "--------------------------------------------"
           mv template ${{ steps.var.outputs.filename }}
           cd ${{ steps.var.outputs.filename }}
           zip -q -r -9 ${{ steps.var.outputs.filename }}.zip *
+          ls -al
           cd ..
           mv ${{ steps.var.outputs.filename }}/${{ steps.var.outputs.filename }}.zip ./
-          ls -al
+          ls -al output
 
       - name: Upload to Artifact(Source file)
         if: github.event.inputs.artifact == 'true'
