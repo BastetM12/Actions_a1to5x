@@ -138,27 +138,6 @@ jobs:
           mv *.img ../output/
           cd ..
 
-      - name: MakeMeSAR
-        run: |
-          mkdir tmp
-          mv output/boot.img tmp/
-          cd tmp
-          ../magiskboot unpack -h boot.img
-          #cp -f ../ramdisk-sar.cpio ramdisk.cpio
-          if [[ -f "ramdisk.cpio" ]]; then
-              mkdir tmp
-              cp ramdisk.cpio tmp/
-              cd tmp
-              cpio -i -F ramdisk.cpio
-              ls -R
-              cd ..
-              rm -rf tmp
-          fi
-          ../magiskboot repack boot.img
-          ls -al
-          mv new-boot.img ../output/boot.img
-          cd ..
-
       - name: Mkdtimg
         continue-on-error: true
         run: |
