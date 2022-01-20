@@ -165,9 +165,6 @@ jobs:
           sed -i '/parts/d' dtsi.*
           sed -i 's/,slotselect//g' dtsi.*
           sed -i 's/,avb//g' dtsi.*
-          sed -i '/,fstab/G' dtsi.*
-          sed -i '/,fstab/r flags.txt' dtsi.*
-          sed -i '/,fstab/G' dtsi.*
           sed -n "$linea,$lineb" dtsi.*
           cp dtsi.* ../output/
           python dtsi2dtbo.py
